@@ -1,11 +1,31 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from finance.models import Category, Expense, Income
 from finance.serializers import CategorySerializer, ExpenseSerializer, IncomeSerializer
 from rest_framework import generics, permissions
 from .permissions import IsOwner
 
+@login_required
 def home(request):
     return render(request, 'home.html')
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            raise ValueError("Invalid username or password")
+    return render(request, 'login.html')
 
 class CategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
